@@ -1,0 +1,175 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+```{r}
+install.packages("gmodels")
+library(gmodels)
+library(tidyverse)
+```
+
+
+```{r}
+bc_covid19 <- read.csv("bc_covid19_1.csv")
+head(bc_covid19, 25)
+str(bc_covid19)
+
+bc_covid19 %>%
+  select(Sex,PhyAc_Before, Exe_After)%>%
+
+exercise_before <- ggplot(data = bc_covid19) +
+  geom_bar(mapping = aes(x = PhyAc_Before, xlab = "Exercise Time Before Covid"))
+
+exercise_before
+```
+
+```{r}
+exercise_after <- ggplot(data = bc_covid19) +
+  geom_bar(mapping = aes(x = Exe_After)) +
+  coord_flip()
+
+exercise_after
+
+```
+
+```{r}
+CrossTable(bc_covid19$Sex, bc_covid19$Exe_Before, prop.chisq = FALSE, prop.r = FALSE, prop.c = FALSE)
+CrossTable(bc_covid19$Sex, bc_covid19$PhyAc_After,prop.chisq = FALSE, prop.r = FALSE, prop.c = FALSE)
+
+```
+```{r}
+#Before covid
+ggplot(data = bc_covid19)+ aes(x = Exe_Before, fill = Sex)+
+  geom_bar()+
+  xlab("Physical Activity")+
+  ylab("Number of People")+
+  ggtitle("Activity Before Covid 19")
+
+#After covid
+ggplot(data = bc_covid19)+ aes(x = PhyAc_After, fill = Sex)+
+  geom_bar()+
+  xlab("Physical Activity")+
+  ylab("Number of People")+
+  ggtitle("Activity After Covid 19")
+
+```
+
+Here we are looking for a change in physical activity before and after covid. We are also using grouping with the variable Sex. We can see some changes with activity before and after covid.Just looking at the tables we can see that before covid as the number of times an individual exercises increased, the number of females decreased. But after covid we noticed that the opposite happened. As the number of times an individual exercises increased, so did the number of females. 
+
+The interesting thing about the males is the number of males being active 1-2 days per week stays about the same. But the number of people working out 3-4 times per week decreased and the number of people exercising 5+ times per week increased by almost 1.5 as much as it was before covid. This might lead us to beleive that those who exercised 3-4 times a week might have more time on their hands because of covid. This difference in activity can be seen in the graphs above. 
+
+```{r}
+bc_covid19 %>%
+  select(Sex, commute_after, Exe_Before) %>%
+  filter(Sex == 'Male' & Exe_Before == '3-4 times/week')
+
+bc_covid19 %>%
+  select(Sex, commute_after, PhyAc_After) %>%
+  filter(Sex == 'Male' & PhyAc_After == '5+ times/week' & commute_after == 'Switched to work from home without change in the workload')
+
+```
+```{r}
+table(bc_covid19$Worker, bc_covid19$Transmode_before)/564*100
+table(bc_covid19$Worker, bc_covid19$Transmode_after)/564*100
+
+```
+running chi sq test for sex and activity. No relationship... 
+```{r}
+before_covid <- table(bc_covid19$Sex, bc_covid19$Exe_Before)
+after_covid <- table(bc_covid19$Sex, bc_covid19$PhyAc_After)
+
+chisq.test(before_covid)
+chisq.test(after_covid)
+```
+running a chi sq test for commute and activity
+```{r}
+before_covid <- table(bc_covid19$commute_before, bc_covid19$Exe_Before)
+after_covid <- table(bc_covid19$commute_after, bc_covid19$PhyAc_After)
+
+before_covid
+after_covid
+
+chisq.test(before_covid)
+chisq.test(after_covid)
+```
+chi sq test for age and activity. The interesting thing here is that there is a relationship between the two
+variables before covid but not after... Not sure why that is. Interestingly enough one might assume that a confounding variable, such as covid, could cause there to be no relationship between the two variables. 
+```{r}
+bc_covid19$Age <- as.factor(bc_covid19$Age)
+
+before_covid <- table(bc_covid19$Age, bc_covid19$Exe_Before)
+after_covid <- table(bc_covid19$Age, bc_covid19$PhyAc_After)
+
+#Before covid
+ggplot(data = bc_covid19)+ aes(x = Exe_Before, fill = Age)+
+  geom_bar()+
+  xlab("Physical Activity")+
+  ylab("Number of People")+
+  ggtitle("Activity Before Covid 19")
+
+#After covid
+ggplot(data = bc_covid19)+ aes(x = PhyAc_After, fill = Age)+
+  geom_bar()+
+  xlab("Physical Activity")+
+  ylab("Number of People")+
+  ggtitle("Activity After Covid 19")
+
+chisq.test(before_covid)
+chisq.test(after_covid)
+
+
+```
+No relationship between marrital status and activity...
+```{r}
+before_covid <- table(bc_covid19$Married, bc_covid19$Exe_Before)
+after_covid <- table(bc_covid19$Married, bc_covid19$PhyAc_After)
+
+before_covid
+after_covid
+
+chisq.test(before_covid)
+chisq.test(after_covid)
+```
+Testing to see if there is a relationship between the number of people who live in a house and ones physical activity after covid. 
+
+We decided to look and see if there was a relationship between the number of people living in a house and peoples physical activity before and after the covid-19 lockdown. We ran a chi squared test to determine if there was a relation between the variables and the results were interesting. The chi squared test we ran on the number of people in a home and physical activity before covid revealed a p-value of .05. Which at our confidence level of 95% gives us more than enough evidence to reject a null hypothesis that there is no relationship between the variables. In simple words, there could be a relationship between the two variables. Then we ran the chi squared test on the number of people in a house and physical activity after the covid-19 lockdown. This revealed a p-value of .08, which at our confidence level of .05 we fail to reject our null hypothesis that there is no relationship between the variables. Which led us to ask ourselves, why? Well the obvious answer is the confounding variable that is covid-19. So, we decided to display our data in a barchart which showed the difference before and after covid. It appears that after covid it there wasn't much of a corelation between the two variables. This was because of the confounding variable of covid-19 had allowed people the ability to workout more. This is evident in the graphs by the increase in people who are able to now workout 3-4 times per week and those who workout 5+ times per week. This could be due to people having more time because they no longer have to commute to work or are no longer employed and have more time to be physically active. This is per sakibs excel graphs. 
+```{r}
+
+anova_results <- aov(HHsize ~ Exe_Before, data = bc_covid19)
+summary(anova_results)
+
+anova_results <- aov(HHsize ~ PhyAc_After, data = bc_covid19)
+summary(anova_results)
+
+#Before covid
+ggplot(data = bc_covid19)+ aes(x = Exe_Before, fill = HHsize)+
+  geom_bar()+
+  xlab("Physical Activity")+
+  ylab("Number of People")+
+  ggtitle("Activity Before Covid 19")
+
+#After covid
+ggplot(data = bc_covid19)+ aes(x = PhyAc_After, fill = HHsize)+
+  geom_bar()+
+  xlab("Physical Activity")+
+  ylab("Number of People")+
+  ggtitle("Activity After Covid 19")
+
+ggplot(data = bc_covid19, mapping = aes(x = Exe_Before, y = HHsize)) + 
+  geom_boxplot(aes(color = Exe_Before)) +
+  coord_flip()
+
+ggplot(data = bc_covid19, mapping = aes(x = PhyAc_After, y = HHsize)) + 
+  geom_boxplot(aes(color = PhyAc_After)) +
+  coord_flip()
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
